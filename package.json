@@ -1,0 +1,27 @@
+{
+  "name": "gridshift",
+  "private": true,
+  "description": "Carbon-aware job scheduling for European power grids: Python API + Next.js app",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "check": "turbo run lint typecheck test build",
+    "openapi": "turbo run openapi --filter=@gridshift/api && turbo run generate --filter=@gridshift/api-client",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "turbo": "^2.11.7"
+  }
+}

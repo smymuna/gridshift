@@ -1,0 +1,17 @@
+# Render blueprint for the GridShift API (https://render.com/docs/blueprint-spec).
+# No database needed: the API caches grid data in memory.
+services:
+  - type: web
+    name: gridshift-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: GRIDSHIFT_CORS_ORIGINS
+        sync: false # e.g. ["https://gridshift.vercel.app"]
+      - key: GRIDSHIFT_LOG_LEVEL
+        value: INFO

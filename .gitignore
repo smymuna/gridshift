@@ -11,3 +11,11 @@ htmlcov/
 .ruff_cache/
 .env
 .DS_Store
+node_modules/
+.next/
+.turbo/
+dist/
+coverage/
+next-env.d.ts
+*.tsbuildinfo
+.env*.local

@@ -1,0 +1,14 @@
+{
+  "name": "@gridshift/api",
+  "version": "0.2.0",
+  "private": true,
+  "description": "GridShift FastAPI service (Python). npm scripts wrap the Python tooling for Turborepo.",
+  "scripts": {
+    "setup": "sh scripts/py.sh python --version",
+    "dev": "sh scripts/py.sh uvicorn gridshift.main:app --reload --port 8000",
+    "lint": "sh scripts/py.sh ruff check . && sh scripts/py.sh ruff format --check .",
+    "typecheck": "sh scripts/py.sh mypy src tests",
+    "test": "sh scripts/py.sh pytest --cov --cov-fail-under=90",
+    "openapi": "sh scripts/py.sh python -m gridshift.openapi > ../../packages/api-client/openapi.json"
+  }
+}

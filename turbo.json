@@ -1,0 +1,59 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "openapi": {
+      "inputs": [
+        "src/**/*.py"
+      ],
+      "outputs": [
+        "../../packages/api-client/openapi.json"
+      ],
+      "cache": false
+    },
+    "generate": {
+      "inputs": [
+        "openapi.json"
+      ],
+      "outputs": [
+        "src/schema.d.ts"
+      ]
+    },
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "!.env*.local"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": [
+        "^typecheck"
+      ]
+    },
+    "lint": {},
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$"
+      ],
+      "outputs": [
+        "coverage/**"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "GRIDSHIFT_*"
+      ]
+    }
+  }
+}

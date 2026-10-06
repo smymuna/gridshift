@@ -1,0 +1,24 @@
+{
+  "name": "@gridshift/api-client",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Typed client for the GridShift API, generated from its OpenAPI document",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/schema.d.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11"
+  }
+}
