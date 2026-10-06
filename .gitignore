@@ -19,3 +19,4 @@ coverage/
 next-env.d.ts
 *.tsbuildinfo
 .env*.local
+.venv.lock/
