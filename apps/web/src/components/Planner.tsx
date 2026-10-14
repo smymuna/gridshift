@@ -7,6 +7,7 @@ import { DeadlinePicker, DurationSlider, PowerPicker, ZonePicker } from './Contr
 import { IntensityChart } from './IntensityChart'
 import { NowStrip, type ZoneSeries } from './NowStrip'
 import { Recommendation } from './Recommendation'
+import { WakeNotice } from './WakeNotice'
 
 /** "Now" for drawing, refreshed every minute so the chart's now-line keeps moving. */
 function useNow(intervalMs = 60_000) {
@@ -69,6 +70,7 @@ export function Planner() {
       </aside>
 
       <div className="flex min-w-0 flex-col gap-6">
+        <WakeNotice waiting={!schedule.data && !schedule.error} />
         <Recommendation
           data={schedule.data}
           error={schedule.error}

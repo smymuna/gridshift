@@ -1,6 +1,7 @@
 'use client'
 
 import { ApiError, type ScheduleResponse } from '@gridshift/api-client'
+import { API_URL } from '@/lib/api'
 import { formatDelay, formatIntensity, formatMass, formatTime } from '@/lib/format'
 
 interface Props {
@@ -18,7 +19,9 @@ function explain(error: unknown): string {
     if (error.status === 503)
       return 'The grid data provider is busy right now. GridShift retries automatically; try again in a minute.'
     if (error.status === 0)
-      return 'Could not reach the GridShift API. If you are running it locally, start it with npm run dev.'
+      return API_URL.includes('localhost')
+        ? 'Could not reach the GridShift API. If you are running it locally, start it with npm run dev.'
+        : 'Could not reach the GridShift API. It may still be starting up; try again in a minute.'
     return error.message
   }
   return 'Something went wrong while planning. Please try again.'
