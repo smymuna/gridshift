@@ -8,6 +8,8 @@
 
 **Carbon-aware scheduling for compute jobs on European power grids.**
 
+**Live:** [web app](https://gridshift-delta.vercel.app) · [API](https://gridshift-api.onrender.com/docs)
+
 GridShift tells you *when* and *where* to run a flexible job (ML training, batch ETL, CI
 builds, backups) so it uses the least carbon-intensive electricity. It uses live measured
 and forecast grid carbon intensity for 26 European countries from
@@ -172,8 +174,8 @@ served instead of an error.
 
 | Piece | Where | Config |
 |---|---|---|
-| API | [Render](https://render.com), free web service, Frankfurt | [`render.yaml`](render.yaml); set `GRIDSHIFT_CORS_ORIGINS` to the web app's URL |
-| Web app | [Vercel](https://vercel.com), free plan | Root directory `apps/web`; set `NEXT_PUBLIC_API_URL` to the API's URL |
+| API | [Render](https://render.com), free web service, Frankfurt — [gridshift-api.onrender.com](https://gridshift-api.onrender.com) | [`render.yaml`](render.yaml); set `GRIDSHIFT_CORS_ORIGINS` to `["https://gridshift-delta.vercel.app"]` |
+| Web app | [Vercel](https://vercel.com), free plan — [gridshift-delta.vercel.app](https://gridshift-delta.vercel.app) | Root directory `apps/web`; set `NEXT_PUBLIC_API_URL` to `https://gridshift-api.onrender.com` |
 
 No database is needed. On Render's free plan the API sleeps after 15 minutes without
 traffic, so the first request can take up to a minute.
