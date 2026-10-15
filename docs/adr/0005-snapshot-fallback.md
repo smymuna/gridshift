@@ -51,5 +51,6 @@ moment it is needed.
   Energy-Charts and Render.
 - After a long outage the snapshot's forecast runs out (most countries forecast 1–2 days
   ahead); the 24-hour limit then turns the fallback off and the API reports the outage.
-- GitHub disables scheduled workflows in repositories without activity for 60 days, so
-  the workflow needs a push (or a manual run) at least that often.
+- GitHub disables scheduled workflows in repositories without activity for 60 days. A
+  monthly `keepalive.yml` re-enables them through the API, which resets that timer
+  without empty commits (which would also redeploy the app).
