@@ -70,7 +70,9 @@ export function Planner() {
       </aside>
 
       <div className="flex min-w-0 flex-col gap-6">
-        <WakeNotice waiting={!schedule.data && !schedule.error} />
+        {/* /v1/zones doesn't depend on Energy-Charts: once it answers, the server is awake and
+            a slow recommendation has another cause (shown by Recommendation). */}
+        <WakeNotice waiting={!zones.data && !zones.error} />
         <Recommendation
           data={schedule.data}
           error={schedule.error}

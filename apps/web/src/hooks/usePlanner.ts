@@ -48,7 +48,9 @@ export function usePlanner() {
       queryKey: ['intensity', zone],
       queryFn: () => api.intensity(zone),
       staleTime: 5 * MINUTE,
-      refetchInterval: 15 * MINUTE, // the data updates every 15 minutes
+      // the data updates every 15 minutes; retry sooner while the provider is failing
+      refetchInterval: (query: { state: { status: string } }) =>
+        query.state.status === 'error' ? MINUTE : 15 * MINUTE,
       select: (r: Awaited<ReturnType<typeof api.intensity>>) => ({
         zone: r.zone,
         resolutionMs: r.resolution_minutes * MINUTE,
@@ -74,6 +76,8 @@ export function usePlanner() {
     placeholderData: keepPreviousData, // keep the last answer on screen while recomputing
     staleTime: MINUTE,
     retry: 1,
+    // while the data provider is down, keep trying once a minute so the page recovers by itself
+    refetchInterval: (query) => (query.state.status === 'error' ? MINUTE : false),
   })
 
   return {

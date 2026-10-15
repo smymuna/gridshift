@@ -17,7 +17,7 @@ function explain(error: unknown): string {
     if (error.status === 422 && error.title === 'No feasible window')
       return 'No window fits: the job is longer than the time left before the deadline in the available forecast. Try a shorter job or a later deadline.'
     if (error.status === 503)
-      return 'The grid data provider is busy right now. GridShift retries automatically; try again in a minute.'
+      return 'The grid data provider (Energy-Charts, Fraunhofer ISE) is not responding right now. GridShift tries again every minute, so this page will update by itself.'
     if (error.status === 0)
       return API_URL.includes('localhost')
         ? 'Could not reach the GridShift API. If you are running it locally, start it with npm run dev.'

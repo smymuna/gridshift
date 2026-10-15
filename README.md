@@ -53,7 +53,7 @@ dependencies, which takes about a minute.
 |---|---|
 | `npm run dev` | API + web app with hot reload |
 | `npm run check` | Lint, type-check, test and build every workspace (what CI runs) |
-| `npm test` | All tests: 69 Python, 20 web, 3 API client |
+| `npm test` | All tests: 69 Python, 22 web, 3 API client |
 | `npm run openapi` | Re-export the API's OpenAPI schema and regenerate the TypeScript client |
 
 The CLI still works on its own:
@@ -163,7 +163,7 @@ served instead of an error.
 - **Tests:** 69 Python tests (90%+ branch coverage enforced): scheduler edge cases and
   randomized brute-force comparison, HTTP client behaviour (retries, `Retry-After`,
   throttling, malformed payloads), the cache (TTL, single-flight, stale on error), and
-  the API contract. 23 TypeScript tests (Vitest + Testing Library): URL plan parsing,
+  the API contract. 25 TypeScript tests (Vitest + Testing Library): URL plan parsing,
   the time-weighted job average, chart and recommendation components, and the client.
 - **Static checks:** `ruff` and `mypy --strict` for Python; Biome and `tsc` for TypeScript.
 - **CI:** one Turborepo run of lint, type-check, test and build for every workspace,

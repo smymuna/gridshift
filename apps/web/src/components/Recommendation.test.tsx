@@ -61,6 +61,8 @@ describe('Recommendation', () => {
     render(
       <Recommendation data={undefined} error={error} loading={false} stale={false} names={names} />,
     )
-    expect(screen.getByRole('alert')).toHaveTextContent(/provider is busy/)
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /Energy-Charts.*not responding.*update by itself/,
+    )
   })
 })
