@@ -32,6 +32,11 @@ moment it is needed.
   grid data from 14:23 (2 h ago)" when data is older than 45 minutes. Old forecasts are
   never presented as live.
 
+- The job runs with a 10-minute budget and 3 s between requests. The first real run after
+  the outage hit its 15-minute limit and published nothing: Energy-Charts, just recovered,
+  answered with HTTP 429 (Retry-After 16–28 s) and dropped connections. Now zones not
+  reached in time keep their previous entry and the rest is still published.
+
 ## Alternatives
 
 - **A persistent disk on Render:** not on the free plan.

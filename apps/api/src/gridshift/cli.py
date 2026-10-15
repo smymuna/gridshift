@@ -97,7 +97,9 @@ async def _snapshot(args: argparse.Namespace, settings: Settings) -> int:
         client = EnergyChartsClient(
             http, max_retries=settings.max_retries, min_interval_s=settings.upstream_min_interval_s
         )
-        snapshot, failed = await build_snapshot(client, ZONES, previous=previous, now=utc_now())
+        snapshot, failed = await build_snapshot(
+            client, ZONES, previous=previous, now=utc_now(), budget_s=args.budget
+        )
     fresh = len(ZONES) - len(failed)
     print(f"snapshot: {fresh} zones fetched, {len(failed)} kept from the previous copy")
     if fresh == 0:
@@ -124,6 +126,10 @@ def build_parser() -> argparse.ArgumentParser:
     snap = sub.add_parser("snapshot", help="save every zone's data (the API's fallback copy)")
     snap.add_argument("--out", type=Path, required=True)
     snap.add_argument("--previous", type=Path, help="earlier snapshot; kept for zones that fail")
+    snap.add_argument(
+        "--budget", type=float, metavar="SECONDS",
+        help="stop starting new zones after this long and publish what was fetched",
+    )  # fmt: skip
 
     srv = sub.add_parser("serve", help="run the HTTP API")
     srv.add_argument("--host", default="127.0.0.1")

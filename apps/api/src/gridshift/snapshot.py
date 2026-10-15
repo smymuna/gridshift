@@ -40,14 +40,26 @@ async def build_snapshot(
     *,
     previous: dict[str, Any] | None,
     now: datetime,
+    budget_s: float | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> tuple[dict[str, Any], list[str]]:
     """Fetch every zone; keep the previous entry for zones that fail. Returns the
-    snapshot and the zones that failed this time."""
+    snapshot and the zones that failed this time.
+
+    With ``budget_s``, zones not started within that time are skipped (kept from the
+    previous copy). A provider that is just recovering answers slowly and with long
+    Retry-After waits; without a budget the job hit its time limit and published nothing
+    (15 Oct 2026)."""
+    deadline = clock() + budget_s if budget_s is not None else None
     entries: dict[str, Any] = {}
     if previous and previous.get("version") == VERSION:
         entries.update(previous.get("zones", {}))
     failed = []
     for zone in zones:
+        if deadline is not None and clock() >= deadline:
+            log.warning("snapshot: time budget used up, keeping the previous copy of zone=%s", zone)
+            failed.append(zone)
+            continue
         try:
             payload = await source.fetch_payload(zone)
             trimmed = {k: payload[k] for k in _KEEP if k in payload}

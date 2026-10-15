@@ -53,7 +53,7 @@ dependencies, which takes about a minute.
 |---|---|
 | `npm run dev` | API + web app with hot reload |
 | `npm run check` | Lint, type-check, test and build every workspace (what CI runs) |
-| `npm test` | All tests: 80 Python, 24 web, 3 API client |
+| `npm test` | All tests: 81 Python, 24 web, 3 API client |
 | `npm run openapi` | Re-export the API's OpenAPI schema and regenerate the TypeScript client |
 
 The CLI still works on its own:
@@ -170,7 +170,7 @@ how old it is. Found on launch day, when Energy-Charts returned 503 for everyone
 
 ## Engineering
 
-- **Tests:** 80 Python tests (90%+ branch coverage enforced): scheduler edge cases and
+- **Tests:** 81 Python tests (90%+ branch coverage enforced): scheduler edge cases and
   randomized brute-force comparison, HTTP client behaviour (retries, `Retry-After`,
   throttling, malformed payloads), the cache (TTL, single-flight, stale on error), the
   snapshot fallback, and the API contract. 27 TypeScript tests (Vitest + Testing Library): URL plan parsing,

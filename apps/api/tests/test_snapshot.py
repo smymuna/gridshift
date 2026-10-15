@@ -45,6 +45,34 @@ async def test_failed_zones_keep_their_previous_copy(fr_payload: dict[str, Any])
     assert snap["zones"]["de"]["fetched_at"] == NOW.isoformat()  # not erased by the outage
 
 
+class TickingClock:
+    """Each call moves time forward, as if every fetch took 100 s."""
+
+    def __init__(self) -> None:
+        self.t = 0.0
+
+    def __call__(self) -> float:
+        self.t += 100
+        return self.t
+
+
+async def test_budget_skips_the_rest_but_keeps_what_was_fetched(
+    fr_payload: dict[str, Any],
+) -> None:
+    previous, _ = await build_snapshot(
+        FakeSource({"fr": fr_payload, "de": fr_payload, "nl": fr_payload}), ["fr", "de", "nl"],
+        previous=None, now=NOW,
+    )  # fmt: skip
+    later = NOW + timedelta(hours=1)
+    snap, failed = await build_snapshot(
+        FakeSource({"fr": fr_payload, "de": fr_payload, "nl": fr_payload}), ["fr", "de", "nl"],
+        previous=previous, now=later, budget_s=150, clock=TickingClock(),
+    )  # fmt: skip
+    assert failed == ["de", "nl"]  # out of time after the first zone
+    assert snap["zones"]["fr"]["fetched_at"] == later.isoformat()
+    assert snap["zones"]["nl"]["fetched_at"] == NOW.isoformat()
+
+
 async def test_unreadable_payloads_are_not_published(fr_payload: dict[str, Any]) -> None:
     snap, failed = await build_snapshot(
         FakeSource({"fr": fr_payload, "de": {"unexpected": True}}), ["fr", "de"],

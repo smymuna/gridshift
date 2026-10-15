@@ -22,7 +22,7 @@ concurrency:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,7 +34,11 @@ jobs:
       - name: Download the published copy (kept for countries that fail now)
         run: curl -fsSL https://smymuna.github.io/gridshift/intensity.json -o previous.json || echo "no published copy yet"
       - name: Fetch every country from Energy-Charts
-        run: gridshift snapshot --previous previous.json --out public/intensity.json
+        # 3 s between requests to avoid HTTP 429; a 10-minute budget so a slow provider
+        # still ends in a publish (countries not reached keep their previous copy)
+        env:
+          GRIDSHIFT_UPSTREAM_MIN_INTERVAL_S: "3"
+        run: gridshift snapshot --previous previous.json --out public/intensity.json --budget 600
       - name: Point the site root at the app
         run: |
           cat > public/index.html <<'HTML'
