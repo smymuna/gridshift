@@ -1,0 +1,57 @@
+name: Snapshot
+
+# Saves every country's latest grid data once an hour and publishes it on GitHub Pages
+# (https://smymuna.github.io/gridshift/intensity.json). The API serves this copy when
+# Energy-Charts is down and its memory is empty: Render's free plan wipes memory and disk
+# on every restart. Countries that fail keep their previous entry; if none can be fetched,
+# nothing is published and the last good copy stays online. See ADR 0005.
+on:
+  schedule:
+    - cron: "23 * * * *" # hourly, off the hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: pip install ./apps/api
+      - name: Download the published copy (kept for countries that fail now)
+        run: curl -fsSL https://smymuna.github.io/gridshift/intensity.json -o previous.json || echo "no published copy yet"
+      - name: Fetch every country from Energy-Charts
+        run: gridshift snapshot --previous previous.json --out public/intensity.json
+      - name: Point the site root at the app
+        run: |
+          cat > public/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>GridShift data</title>
+          <meta http-equiv="refresh" content="0; url=https://gridshift-delta.vercel.app/">
+          <p>Hourly grid data for <a href="https://gridshift-delta.vercel.app/">GridShift</a>: <a href="intensity.json">intensity.json</a></p>
+          HTML
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: snapshot
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

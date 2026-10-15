@@ -141,6 +141,11 @@ class EnergyChartsClient:
             self._last_request = self._clock()
 
     async def fetch_intensity(self, zone: str) -> IntensitySeries:
+        payload = await self.fetch_payload(zone)
+        return parse_co2eq(zone, payload, fetched_at=datetime.now(UTC))
+
+    async def fetch_payload(self, zone: str) -> dict[str, Any]:
+        """The raw /co2eq payload (the hourly snapshot stores it as received)."""
         response = await self._get("/co2eq", params={"country": zone})
         if response.status_code in self.ZONE_NOT_FOUND:
             raise ZoneNotFoundError(f"no carbon intensity data for zone {zone!r}")
@@ -150,7 +155,7 @@ class EnergyChartsClient:
             raise UpstreamDataError(f"invalid JSON for zone {zone!r}") from exc
         if not isinstance(payload, dict):
             raise UpstreamDataError(f"unexpected co2eq payload for {zone!r}")
-        return parse_co2eq(zone, payload, fetched_at=datetime.now(UTC))
+        return payload
 
     async def _get(self, path: str, *, params: dict[str, str]) -> httpx.Response:
         for attempt in range(self._max_retries + 1):

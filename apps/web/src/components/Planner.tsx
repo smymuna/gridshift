@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { usePlanner } from '@/hooks/usePlanner'
 import { localTimeZoneName } from '@/lib/format'
 import { DeadlinePicker, DurationSlider, PowerPicker, ZonePicker } from './Controls'
+import { DataAgeNotice } from './DataAgeNotice'
 import { IntensityChart } from './IntensityChart'
 import { NowStrip, type ZoneSeries } from './NowStrip'
 import { Recommendation } from './Recommendation'
@@ -73,6 +74,10 @@ export function Planner() {
         {/* /v1/zones doesn't depend on Energy-Charts: once it answers, the server is awake and
             a slow recommendation has another cause (shown by Recommendation). */}
         <WakeNotice waiting={!zones.data && !zones.error} />
+        <DataAgeNotice
+          fetchedAt={intensity.flatMap((q) => (q.data ? [q.data.fetchedAt] : []))}
+          nowMs={nowMs}
+        />
         <Recommendation
           data={schedule.data}
           error={schedule.error}

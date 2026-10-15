@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     """How old cached data may be when the provider is failing (serve stale on error)."""
     upstream_min_interval_s: float = Field(default=1.0, ge=0)
     """Minimum gap between calls to Energy-Charts, which rate limits bursts."""
+    fallback_url: HttpUrl | None = HttpUrl("https://smymuna.github.io/gridshift/intensity.json")
+    """Hourly snapshot served when Energy-Charts is down and nothing is cached (None: off)."""
+    fallback_max_age_s: float = Field(default=24 * 3600.0, ge=0)
     cors_origins: list[str] = ["http://localhost:3000"]
     cors_origin_regex: str | None = None
     log_level: str = "INFO"

@@ -29,6 +29,7 @@ from gridshift.api.schemas import (
 from gridshift.config import Settings
 from gridshift.domain.scheduler import NoFeasibleWindowError, recommend
 from gridshift.services.intensity import IntensityService
+from gridshift.snapshot import SnapshotFallback
 from gridshift.zones import ZONES
 
 log = logging.getLogger(__name__)
@@ -66,7 +67,14 @@ def create_app(
         client = EnergyChartsClient(
             http, max_retries=s.max_retries, min_interval_s=s.upstream_min_interval_s
         )
-        return IntensityService(client, ttl_s=s.cache_ttl_s, max_stale_s=s.cache_max_stale_s)
+        fallback = (
+            SnapshotFallback(http, str(s.fallback_url), max_age_s=s.fallback_max_age_s)
+            if s.fallback_url
+            else None
+        )
+        return IntensityService(
+            client, ttl_s=s.cache_ttl_s, max_stale_s=s.cache_max_stale_s, fallback=fallback
+        )
 
     factory = service_factory or default_factory
 

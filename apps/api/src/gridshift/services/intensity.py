@@ -4,7 +4,9 @@ Energy-Charts rate limits aggressively (HTTP 429) and only publishes new values 
 15 minutes, so each zone is fetched at most once per TTL. Concurrent requests for the
 same zone share one in-flight fetch ("single flight") instead of all calling upstream.
 If a refresh fails because the provider is down or rate limiting, data up to
-``max_stale_s`` past its expiry is served instead of an error.
+``max_stale_s`` past its expiry is served instead of an error. With nothing in memory (a
+fresh start), an optional fallback (the hourly snapshot, see ``gridshift.snapshot``) is
+asked before giving up.
 """
 
 from __future__ import annotations
@@ -26,6 +28,10 @@ class IntensityProvider(Protocol):
     async def fetch_intensity(self, zone: str) -> IntensitySeries: ...
 
 
+class Fallback(Protocol):
+    async def get(self, zone: str) -> IntensitySeries | None: ...
+
+
 @dataclass(slots=True)
 class _Entry:
     series: IntensitySeries
@@ -39,11 +45,15 @@ class IntensityService:
         *,
         ttl_s: float = 900.0,
         max_stale_s: float = 0.0,
+        fallback: Fallback | None = None,
+        fallback_ttl_s: float = 60.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._provider = provider
         self._ttl_s = ttl_s
         self._max_stale_s = max_stale_s
+        self._fallback = fallback
+        self._fallback_ttl_s = fallback_ttl_s
         self._clock = clock
         self._cache: dict[str, _Entry] = {}
         self._inflight: dict[str, asyncio.Task[IntensitySeries]] = {}
@@ -76,6 +86,12 @@ class IntensityService:
             if entry is not None and self._clock() - entry.expires_at <= self._max_stale_s:
                 log.warning("provider unavailable, serving stale data for zone=%s", zone)
                 return entry.series
-            raise
+            series_or_none = await self._fallback.get(zone) if self._fallback else None
+            if series_or_none is None:
+                raise
+            log.warning("provider unavailable, serving the saved snapshot for zone=%s", zone)
+            # cached briefly, so the provider is tried again soon but not on every request
+            self._cache[zone] = _Entry(series_or_none, self._clock() + self._fallback_ttl_s)
+            return series_or_none
         self._cache[zone] = _Entry(series, self._clock() + self._ttl_s)
         return series

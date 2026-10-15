@@ -2,16 +2,19 @@
 
 gridshift schedule --zone de --zone fr --duration 2h --deadline 2026-10-05T06:00Z
 gridshift serve --port 8000
+gridshift snapshot --out intensity.json --previous intensity.json
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import re
 import sys
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import httpx
 
@@ -20,6 +23,8 @@ from gridshift.adapters.energy_charts import EnergyChartsClient, ProviderError
 from gridshift.config import Settings
 from gridshift.domain.models import Recommendation, Window
 from gridshift.domain.scheduler import NoFeasibleWindowError, recommend
+from gridshift.snapshot import build_snapshot
+from gridshift.zones import ZONES
 
 _DURATION = re.compile(r"^(?:(?P<h>\d+)h)?(?:(?P<m>\d+)m)?$")
 
@@ -79,6 +84,30 @@ async def _schedule(args: argparse.Namespace, settings: Settings) -> Recommendat
     return recommend(series, duration=args.duration, now=now, deadline=deadline)
 
 
+async def _snapshot(args: argparse.Namespace, settings: Settings) -> int:
+    previous = None
+    if args.previous and args.previous.exists():
+        try:
+            previous = json.loads(args.previous.read_text())
+        except ValueError:
+            print(f"warning: ignoring unreadable {args.previous}", file=sys.stderr)
+    async with httpx.AsyncClient(
+        base_url=str(settings.energy_charts_url), timeout=settings.http_timeout_s
+    ) as http:
+        client = EnergyChartsClient(
+            http, max_retries=settings.max_retries, min_interval_s=settings.upstream_min_interval_s
+        )
+        snapshot, failed = await build_snapshot(client, ZONES, previous=previous, now=utc_now())
+    fresh = len(ZONES) - len(failed)
+    print(f"snapshot: {fresh} zones fetched, {len(failed)} kept from the previous copy")
+    if fresh == 0:
+        print("error: no zone could be fetched; not writing a snapshot", file=sys.stderr)
+        return 1
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(snapshot, separators=(",", ":")))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="gridshift", description=__doc__.splitlines()[0])
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -91,6 +120,10 @@ def build_parser() -> argparse.ArgumentParser:
     )  # fmt: skip
     sch.add_argument("--duration", type=parse_duration, required=True, help="e.g. 90m, 2h")
     sch.add_argument("--deadline", type=parse_deadline, help="ISO 8601, default: end of forecast")
+
+    snap = sub.add_parser("snapshot", help="save every zone's data (the API's fallback copy)")
+    snap.add_argument("--out", type=Path, required=True)
+    snap.add_argument("--previous", type=Path, help="earlier snapshot; kept for zones that fail")
 
     srv = sub.add_parser("serve", help="run the HTTP API")
     srv.add_argument("--host", default="127.0.0.1")
@@ -109,6 +142,9 @@ def main(argv: list[str] | None = None) -> int:
 
         uvicorn.run("gridshift.main:app", host=args.host, port=args.port)
         return 0
+
+    if args.command == "snapshot":
+        return asyncio.run(_snapshot(args, settings))
 
     try:
         rec = asyncio.run(_schedule(args, settings))

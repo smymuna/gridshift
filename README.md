@@ -53,7 +53,7 @@ dependencies, which takes about a minute.
 |---|---|
 | `npm run dev` | API + web app with hot reload |
 | `npm run check` | Lint, type-check, test and build every workspace (what CI runs) |
-| `npm test` | All tests: 69 Python, 22 web, 3 API client |
+| `npm test` | All tests: 80 Python, 24 web, 3 API client |
 | `npm run openapi` | Re-export the API's OpenAPI schema and regenerate the TypeScript client |
 
 The CLI still works on its own:
@@ -138,6 +138,8 @@ flowchart LR
     API --> S[IntensityService<br/>TTL cache, single-flight,<br/>stale on error]
     S --> EC[EnergyChartsClient<br/>throttle, retries, backoff]
     EC -->|GET /co2eq| EXT[(Energy-Charts API)]
+    S -.->|provider down,<br/>nothing cached| SN[(Hourly snapshot<br/>GitHub Pages)]
+    GA[GitHub Actions<br/>hourly] -->|gridshift snapshot| SN
     API --> SCH[Scheduler<br/>pure domain logic]
 ```
 
@@ -158,12 +160,20 @@ across all users, and if a refresh still fails the last good data (up to 6 hours
 served instead of an error.
 [ADR 0003](docs/adr/0003-caching-and-retries.md).
 
+**When the provider is down after a restart.** Memory doesn't survive a restart, and on
+Render's free plan the service restarts every time it wakes up. So a GitHub Actions job
+saves every country's data once an hour and publishes it on
+[GitHub Pages](https://smymuna.github.io/gridshift/intensity.json). If Energy-Charts fails
+and nothing is cached, the API serves that copy (up to 24 hours old) and the web app says
+how old it is. Found on launch day, when Energy-Charts returned 503 for everyone.
+[ADR 0005](docs/adr/0005-snapshot-fallback.md).
+
 ## Engineering
 
-- **Tests:** 69 Python tests (90%+ branch coverage enforced): scheduler edge cases and
+- **Tests:** 80 Python tests (90%+ branch coverage enforced): scheduler edge cases and
   randomized brute-force comparison, HTTP client behaviour (retries, `Retry-After`,
-  throttling, malformed payloads), the cache (TTL, single-flight, stale on error), and
-  the API contract. 25 TypeScript tests (Vitest + Testing Library): URL plan parsing,
+  throttling, malformed payloads), the cache (TTL, single-flight, stale on error), the
+  snapshot fallback, and the API contract. 27 TypeScript tests (Vitest + Testing Library): URL plan parsing,
   the time-weighted job average, chart and recommendation components, and the client.
 - **Static checks:** `ruff` and `mypy --strict` for Python; Biome and `tsc` for TypeScript.
 - **CI:** one Turborepo run of lint, type-check, test and build for every workspace,
@@ -196,7 +206,9 @@ Being honest about these matters for anything that reports emissions:
   Data centre PUE, and the network cost of moving data across borders, are not included.
 - **Operational emissions only.** Embodied emissions of hardware are out of scope.
 - **Single provider, in-memory cache.** Fine for one instance. Several replicas would each
-  fetch separately; a shared cache (Redis) would be next.
+  fetch separately; a shared cache (Redis) would be next. The hourly snapshot covers
+  restarts during an outage, but it is up to an hour old and runs out with the forecast
+  horizon.
 
 ## Roadmap
 
